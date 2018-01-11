@@ -35,13 +35,13 @@
 
   if (end($split) == "validate") {
     $db->request(
-      "UPDATE reservations SET validated = 1 WHERE id = ?",
-      array($split[count($split) - 2])
+      "UPDATE reservations SET validated = ? WHERE id = ?",
+      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
     );
 
     echo json_encode(array(
       "status" => "200",
-      "message" => "Place validée"
+      "message" => "Place ".((isset($_GET['validate']) && $_GET['validate'] == 0 ? 'dé' : ''))."validée"
     ));
 
     exit;
