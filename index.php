@@ -21,7 +21,6 @@
     exit;
   }
 
-  $event = $query->fetch();
   $split = explode("?", $_SERVER["REQUEST_URI"]);
   $split = explode("/", $split[0]);
 
@@ -31,10 +30,25 @@
       array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
     );
 
-    echo json_encode(array(
-      "status" => "200",
-      "message" => "Place ".((isset($_GET['validate']) && $_GET['validate'] == 0 ? 'dé' : ''))."validée"
-    ));
+    $query = $db->request(
+      "SELECT * FROM participantspayants WHERE shortag = ?",
+      array($split[count($split) - 2])
+    );
+
+    if ($query->rowCount() == 0) {
+      echo json_encode(array(
+        "message" => "Place ".((isset($_GET['validate']) && $_GET['validate'] == 0 ? 'dé' : ''))."validée"
+      ));
+    }
+    else {
+      $data = $query->rowCount();
+
+      echo json_encode(array(
+        "command" => "createCard",
+        "fun_id" => FUN_ID,
+        "withSold" => $data['reload']
+      ));
+    }
 
     exit;
   }
@@ -63,6 +77,16 @@
 
   $data = $query->fetch();
 
+  $query = $db->request(
+    "SELECT * FROM participants WHERE shortag = ?",
+    array($data['shortag'])
+  );
+
+  if ($query->rowCount() != 0) {
+    $data2 = $query->fetch();
+    $data['login'] = $data2['prenom'].' '.$data2['nom'];
+  }
+
   if ($data["is_validated"])
     header("HTTP/1.0 410 Gone");
 
@@ -72,7 +96,6 @@
     "id" => $data["shortag"],
     "username" => $data["login"],
     "type" => $types[$data["type"] - 1],
-    "fun_id" => FUN_ID,
     "creation_date" => 1 ,
     "expires_at" => 99999999999
   ));
