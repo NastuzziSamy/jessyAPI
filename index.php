@@ -72,6 +72,7 @@
     "id" => $data["shortag"],
     "username" => $data["login"],
     "type" => $types[$data["type"] - 1],
+    "fun_id" => FUN_ID
     "creation_date" => 1 ,
     "expires_at" => 99999999999
   ));
