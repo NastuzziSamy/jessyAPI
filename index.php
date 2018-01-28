@@ -28,8 +28,8 @@
 
   if (end($split) == "validate") {
     $db->request(
-      "UPDATE tickets SET isValidated = ? WHERE shortTag = ?",
-      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
+      "UPDATE tickets SET isValidated = ?, modificationDate = ? WHERE shortTag = ?",
+      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), time(), $split[count($split) - 2])
     );
 
     echo json_encode(array(
