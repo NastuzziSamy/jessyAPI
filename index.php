@@ -146,6 +146,6 @@
     "id" => $tag["shortTag"], // Id permettant de retrouver le ticket (doit être identique que celui sur le QR Code)
     "username" => $user["login"] == NULL ? '' : $user["login"], // Login de la personne si elle en possède un: recoupement avec Ginger (doit être identique que celui sur le QR Code)
     "creationDate" => $tag['creationDate'],
-    "expirationDate" => $tag['modificationDate'] == NULL ? -1 : $tag['modificationDate'],
+    "expirationDate" => !$tag['isValidated'] || $tag['modificationDate'] == NULL ? -1 : $tag['modificationDate'],
     "data" => $data // Oblige l'appli à afficher ces informations dans l'ordre avec la même écriture
   ));
