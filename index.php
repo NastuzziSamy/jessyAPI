@@ -109,9 +109,6 @@
 
   $user = $query->fetch();
 
-  if ($data["isValidated"])
-    header("HTTP/1.0 410 Gone");
-
   $data = array(
     'Informations générales' => array(
       "Nom" => $ticket['lastname'],
@@ -141,6 +138,9 @@
       'Age' => $age.' an'.($age > 1 ? 's' : '')
     );
   }
+
+  if ($tag["isValidated"])
+    header("HTTP/1.0 410 Gone");
 
   echo json_encode(array(
     "id" => $tag["shortTag"], // Id permettant de retrouver le ticket (doit être identique que celui sur le QR Code)
