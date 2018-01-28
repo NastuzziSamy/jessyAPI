@@ -9,33 +9,24 @@
       "error" => "403",
       "message" => "Pas de clé !"
     ));
-
     exit;
   }
 
-  $query = $db->request(
-    "SELECT * FROM evenements WHERE id = ?",
-    array($_GET['app_key'])
-  );
-
-  if ($query->rowCount() == 0) {
+  if ($_GET['app_key'] != APP_KEY) {
     header("HTTP/1.0 400 Bad Request");
     echo json_encode(array(
       "error" => "400",
       "message" => "Clé incorrecte !"
     ));
-
     exit;
   }
-
-  $event = $query->fetch();
 
   $split = explode("?", $_SERVER["REQUEST_URI"]);
   $split = explode("/", $split[0]);
 
   if (end($split) == "validate") {
     $db->request(
-      "UPDATE reservations SET validated = ? WHERE id = ?",
+      "UPDATE tickets SET isValidated = ? WHERE shortTag = ?",
       array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
     );
 
@@ -47,84 +38,43 @@
     exit;
   }
 
-  $query = $db->request(
-    "SELECT * FROM reservations WHERE username = ? AND event_id = ?",
-    array(end($split), $event['id'])
-  );
+  if ($split[count($split) - 2] == 'user') {
+    $query = $db->request(
+      "SELECT * FROM users WHERE login = ?",
+      array(end($split))
+    );
+  }
+  else {
+    $query = $db->request(
+      "SELECT * FROM tickets WHERE shortTag = ?",
+      array(end($split))
+    );
+  }
 
   if ($query->rowCount() == 0) {
-    if ($event['idShotgun'] == NULL) {
-      header("HTTP/1.0 404 Not Found");
-      echo json_encode(array(
-        "error" => "404",
-        "message" => "Pas trouvé"
-      ));
-
-      exit;
-    }
-    else {
-      $query = $db->request(
-        "SELECT * FROM shotgun.prod2_choice, shotgun.prod2_option
-        WHERE shotgun.prod2_choice.fk_desc_id = ? AND shotgun.prod2_choice.choice_id = shotgun.prod2_option.fk_choice_id AND shotgun.prod2_option.user_login = ? AND shotgun.prod2_option.option_status = ?",
-        array($event['idShotgun'], end($split), 'V')
-      );
-
-      if ($query->rowCount() == 0) {
-        header("HTTP/1.0 404 Not Found");
-        echo json_encode(array(
-          "error" => "404",
-          "message" => "Pas trouvé"
-        ));
-
-        exit;
-      }
-
-      $data = $query->fetch();
-
-      $db->request(
-        "INSERT INTO reservations VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, 0)",
-        array($data['user_login'], $data['user_nom'], $data['user_prenom'], $data['user_mail'], $data['choice_name'], $data['option_id'], $event['id'])
-      );
-
-      $query = $db->request(
-        "SELECT * FROM reservations WHERE username = ? AND event_id = ?",
-        array(end($split), $event['id'])
-      );
-    }
+    header("HTTP/1.0 404 Not Found");
+    echo json_encode(array(
+      "error" => "404",
+      "message" => "Non trouvé"
+    ));
+    exit;
   }
 
   $data = $query->fetch();
 
-  if ($data["validated"]) {
+  if ($data["isValidated"])
     header("HTTP/1.0 410 Gone");
-    echo json_encode(array(
-      "error" => "410",
-      "message" => "Place plus valide"
-    ));
-
-    exit;
-  }
 
   echo json_encode(array(
-    "id" => $data["id"],
-    "username" => $data["firstname"].' '.$data['lastname'],
-    "type" => $data["type"],
-    "creation_date" => $event["creation_date"] == NULL ? 1 : $event["creation_date"],
-    "expires_at" => $event["expires_at"] == NULL ? 99999999999 : $event["expires_at"],
-    "reservation_id" => $data["reservation_id"],
-    "seance" => $event["seance"]
+    "id" => $data["shortag"], // Id permettant de retrouver le ticket (doit être identique que celui sur le QR Code)
+    "username" => $data["login"], // Login de la personne si elle en possède un: recoupement avec Ginger (doit être identique que celui sur le QR Code)
+    "data" => array( // Oblige l'appli à afficher ces informations dans l'ordre avec la même écriture
+      "Nom" => $data['lastname'],
+      "Prénom" => $data['firstname'],
+      "Email" => $data['email'],
+      "Type" => $data["type"],
+      "Prix" => $data["price"] + '€',
+    ),
+    "creationDate" => $data['creationDate'],
+    "expirationDate" => -1 // expire jamais
   ));
-
-/*
-  $file = file_get_contents("data.csv");
-  $reservations = explode(PHP_EOL, $file);
-
-  foreach ($reservations as $reservation) {
-    $data = explode(',', $reservation);
-
-    $db->request(
-      "INSERT INTO reservations(reservation_id, username, firstname, lastname, email, type) VALUES(?, ?, ?, ?, ?, ?)",
-      array($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])
-    );
-  }
-*/
