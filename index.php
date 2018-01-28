@@ -116,7 +116,6 @@
     'Informations générales' => array(
       "Nom" => $ticket['lastname'],
       "Prénom" => $ticket['firstname'],
-      //"Email" => $user['email'],
     ),
     'Billet' => array(
       "Type" => $type["name"],
@@ -129,7 +128,6 @@
 
   if ($type['nbrInPack'] != 1) {
     $data['Billet']['Groupe'] = 'Billet vendu par '.$type['nbrInPack'];
-    $data['Billet']['Description'] = $type['info'];
   }
 
   if ($type['maxAge'] < 100)
