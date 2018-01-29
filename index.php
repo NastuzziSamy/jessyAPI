@@ -28,8 +28,8 @@
 
   if (end($split) == "validate") {
     $db->request(
-      "UPDATE tickets SET isValidated = ? WHERE shortTag = ?",
-      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
+      "UPDATE tags SET isValidated = ?, modificationDate = ? WHERE shortTag = ?",
+      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), time(), $split[count($split) - 2])
     );
 
     echo json_encode(array(
@@ -67,7 +67,7 @@
     header("HTTP/1.0 503 Internal Server Error");
     echo json_encode(array(
       "error" => "503",
-      "message" => "Ticket non trouvable !"
+      "message" => "Ticket non trouvé !"
     ));
 
     exit;
@@ -84,7 +84,7 @@
     header("HTTP/1.0 503 Internal Server Error");
     echo json_encode(array(
       "error" => "503",
-      "message" => "Type de ticket non trouvable !"
+      "message" => "Type de ticket non trouvé !"
     ));
 
     exit;
@@ -101,16 +101,13 @@
     header("HTTP/1.0 503 Internal Server Error");
     echo json_encode(array(
       "error" => "503",
-      "message" => "Utilisateur non trouvable !"
+      "message" => "Utilisateur non trouvé !"
     ));
 
     exit;
   }
 
   $user = $query->fetch();
-
-  if ($data["isValidated"])
-    header("HTTP/1.0 410 Gone");
 
   $data = array(
     'Informations générales' => array(
@@ -142,10 +139,13 @@
     );
   }
 
+  if ($tag["isValidated"])
+    header("HTTP/1.0 410 Gone");
+
   echo json_encode(array(
     "id" => $tag["shortTag"], // Id permettant de retrouver le ticket (doit être identique que celui sur le QR Code)
-    "username" => $user["login"] == NULL ? '' : $user["login"], // Login de la personne si elle en possède un: recoupement avec Ginger (doit être identique que celui sur le QR Code)
+    "username" => $user["login"] == NULL || (!$type['sellToStudentsOnly'] && !$type['sellToContributers']) ? '' : $user["login"], // Login de la personne si elle en possède un: recoupement avec Ginger (doit être identique que celui sur le QR Code)
     "creationDate" => $tag['creationDate'],
-    "expirationDate" => $tag['modificationDate'] == NULL ? -1 : $tag['modificationDate'],
+    "expirationDate" => !$tag['isValidated'] || $tag['modificationDate'] == NULL ? -1 : $tag['modificationDate'],
     "data" => $data // Oblige l'appli à afficher ces informations dans l'ordre avec la même écriture
   ));
