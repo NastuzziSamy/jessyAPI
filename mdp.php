@@ -1,8 +1,8 @@
 <?php
-  const DB_HOST = '';
+  const DB_HOST = 'localhost';
 
-  const DB_NAME = '';
-  const DB_USER = '';
-  const DB_PASS = '';
+  const DB_NAME = 'picasso';
+  const DB_USER = 'picasso';
+  const DB_PASS = '1WZ4YUfBxONQlDVV';
 
-  const APP_KEY = '';
+  const APP_KEY = 'ecocup';
