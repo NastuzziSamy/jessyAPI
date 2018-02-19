@@ -101,7 +101,6 @@
 
   if ($data["isValidated"])
     header("HTTP/1.0 410 Gone");
-  }
 
   echo json_encode(array(
     "id" => $data['id'],
