@@ -6,7 +6,8 @@
   if (!isset($_GET['app_key'])) {
     header("HTTP/1.0 403 Not Authorized");
     echo json_encode(array(
-      "error" => "403",
+      "id" => "",
+      "username" => "",
       "message" => "Pas de clé !"
     ));
 
@@ -21,7 +22,8 @@
   if ($query->rowCount() == 0) {
     header("HTTP/1.0 400 Bad Request");
     echo json_encode(array(
-      "error" => "400",
+      "id" => "",
+      "username" => "",
       "message" => "Clé incorrecte !"
     ));
 
@@ -36,12 +38,13 @@
   if (end($split) == "validate") {
     $db->request(
       "UPDATE reservations SET validated = ? WHERE id = ?",
-      array((isset($_GET['validate']) && $_GET['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
+      array((isset($_POST['validate']) && $_POST['validate'] == 0 ? 0 : 1), $split[count($split) - 2])
     );
 
     echo json_encode(array(
-      "status" => "200",
-      "message" => "Place ".((isset($_GET['validate']) && $_GET['validate'] == 0 ? 'dé' : ''))."validée"
+      "id" => $split[count($split) - 2],
+      "username" => "",
+      "message" => "Place ".((isset($_POST['validate']) && $_POST['validate'] == 0 ? 'dé' : ''))."validée"
     ));
 
     exit;
@@ -56,7 +59,8 @@
     if ($event['idShotgun'] == NULL) {
       header("HTTP/1.0 404 Not Found");
       echo json_encode(array(
-        "error" => "404",
+        "id" => "",
+        "username" => "",
         "message" => "Pas trouvé"
       ));
 
@@ -72,7 +76,8 @@
       if ($query->rowCount() == 0) {
         header("HTTP/1.0 404 Not Found");
         echo json_encode(array(
-          "error" => "404",
+          "id" => "",
+          "username" => "",
           "message" => "Pas trouvé"
         ));
 
@@ -97,22 +102,32 @@
 
   if ($data["validated"]) {
     header("HTTP/1.0 410 Gone");
-    echo json_encode(array(
-      "error" => "410",
-      "message" => "Place plus valide"
-    ));
-
-    exit;
   }
 
   echo json_encode(array(
-    "id" => $data["id"],
-    "username" => $data["firstname"].' '.$data['lastname'],
-    "type" => $data["type"],
-    "creation_date" => $event["creation_date"] == NULL ? 1 : $event["creation_date"],
-    "expires_at" => $event["expires_at"] == NULL ? 99999999999 : $event["expires_at"],
-    "reservation_id" => $data["reservation_id"],
-    "seance" => $event["seance"]
+    "id" => $data['id'],
+    "username" => $data['username'],
+    "creationDate" => $event["creation_date"] == NULL ? 1 : $event["creation_date"],
+    "expirationDate" => $event["expires_at"] == NULL ? 99999999999 : $event["expires_at"],
+    "data" => array(
+      "Informations générales" => array(
+        "Nom" => $data['lastname'],
+        "Prénom" => $data['firstname'],
+        "Email" => $data['email'],
+      ),
+      "Informations complémentaires" => array(
+        "Evènement" => $event["seance"],
+        "Type de place" => $data["type"],
+        "Numéro de réserv." => $data["reservation_id"],
+      ),
+    ),
+    "positiveCommand" => array(
+      'name' => $data["validated"] ? 'Dévalider' : 'Valider',
+      'command' => 'validate',
+      'arguments' => array(
+        'validate' => $data["validated"] ? '0' : '1'
+      )
+    )
   ));
 
 /*
