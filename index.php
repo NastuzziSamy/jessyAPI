@@ -10,27 +10,18 @@
       "username" => "",
       "message" => "Pas de clé !"
     ));
-
     exit;
   }
 
-  $query = $db->request(
-    "SELECT * FROM evenements WHERE id = ?",
-    array($_GET['app_key'])
-  );
-
-  if ($query->rowCount() == 0) {
+  if ($_GET['app_key'] != APP_KEY) {
     header("HTTP/1.0 400 Bad Request");
     echo json_encode(array(
       "id" => "",
       "username" => "",
       "message" => "Clé incorrecte !"
     ));
-
     exit;
   }
-
-  $event = $query->fetch();
 
   $split = explode("?", $_SERVER["REQUEST_URI"]);
   $split = explode("/", $split[0]);
@@ -50,10 +41,18 @@
     exit;
   }
 
-  $query = $db->request(
-    "SELECT * FROM reservations WHERE username = ? AND event_id = ?",
-    array(end($split), $event['id'])
-  );
+  if ($split[count($split) - 2] == 'user') {
+    $query = $db->request(
+      "SELECT * FROM users WHERE login = ?",
+      array(end($split))
+    );
+  }
+  else {
+    $query = $db->request(
+      "SELECT * FROM tickets WHERE shortTag = ?",
+      array(end($split))
+    );
+  }
 
   if ($query->rowCount() == 0) {
     if ($event['idShotgun'] == NULL) {
@@ -100,7 +99,7 @@
 
   $data = $query->fetch();
 
-  if ($data["validated"]) {
+  if ($data["isValidated"])
     header("HTTP/1.0 410 Gone");
   }
 
@@ -129,17 +128,3 @@
       )
     )
   ));
-
-/*
-  $file = file_get_contents("data.csv");
-  $reservations = explode(PHP_EOL, $file);
-
-  foreach ($reservations as $reservation) {
-    $data = explode(',', $reservation);
-
-    $db->request(
-      "INSERT INTO reservations(reservation_id, username, firstname, lastname, email, type) VALUES(?, ?, ?, ?, ?, ?)",
-      array($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])
-    );
-  }
-*/
